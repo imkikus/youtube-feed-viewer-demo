@@ -1,0 +1,268 @@
+<!doctype html>
+
+<html lang="en" ng-app="ytfeed">
+<head>
+    <meta charset="utf-8">
+
+    <title>YouTube Feed Viewer</title>
+
+    
+    <meta name="author" content="KIK">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+
+    <style type="text/css">
+        body { background-color:#f5f5f5; }
+
+        .container { margin-top: 100px; padding-bottom:20px;}
+
+        .video-description { font-size:11px; line-height: 16px; }
+        .socials {}
+        .socials .kik_it { float:right; margin-left:5px; margin-top:0px;}
+
+        header, #header {
+            position:fixed;
+            top:0px;
+            width:100%;
+            height: 80px;
+            background-color: #fff;
+            z-index:9999;
+        }
+
+        header a, #header a {
+            display:block;
+            padding:12px 0 0px;
+            text-align:center;
+        }
+
+        .alert ul, .alert ul li { margin:0; padding:0; list-style: none; }
+        .alert ul li { border-bottom: 1px dotted #999; font-size:10px; margin-bottom: 3px; padding-bottom:3px; }
+    </style>
+
+    <!--[if lt IE 9]>
+        <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    
+    <!-- KIK Specific 
+    <meta name="description" content="Demo source code for ">
+    <link rel="kik-icon" href="">
+    <link rel="canonical" href="">
+    -->
+    
+</head>
+
+<body>
+    
+    <header id="header">
+        <a ui-sref="recentView">YouTube Feed Viewer <br> Place logo here</a>
+    </header>
+
+    <div class="container">
+        <div ui-view autoscroll="false"></div>
+    </div>
+
+    <!-- Add Templates -->
+
+    <script type="text/ng-template" id="recent.html">
+        <div class="row">
+            <div class="col-lg-2 col-md-3 col-sm-6 col-xs-6" ng-repeat="video in videos">
+                <a class="thumbnail" ui-sref="detailsView({ videoId: video.id })">
+                    <img ng-src="{{video.thumbnail.hqDefault}}" class="img-responsive">
+                </a>
+            </div>
+        </div>
+    </script>
+
+    <script type="text/ng-template" id="details.html">
+        <div class="row">
+            <div class="col-lg-8 col-md-7 col-sm-12 col-xs-12">
+                <div class="embed-responsive embed-responsive-4by3">
+                    <iframe class="embed-responsive-item" ng-src="{{video.trustedUrl}}" frameborder=0 allowfullscreen></iframe>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-5 col-sm-12 col-xs-12">
+                <h3>{{video.title}}</h3>
+                <p class="video-description">{{video.description}}</p>
+                <hr>
+                <div class="row">
+                    <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4" style="line-height:13px;">
+                        {{video.viewCount | number:0}}<br>
+                        <b class="video-description">VIEWS</b>
+                    </div>
+
+                    <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8 socials">
+                        <div class="clearfix">
+                            <button kikbtn class="btn btn-link kik_it" id="{{video.id}}" title="{{video.title}}" description="{{video.description}}" imagesrc="{{video.thumbnail.hqDefault}}"><img src="sharebtn.png" width="32"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </script>
+
+    <!-- Add Scripts -->
+
+    <script type="text/javascript" src="http://cdn.kik.com/kik/1.0.9/kik.js"></script>
+    <script type="text/javascript" src="https://code.angularjs.org/1.2.24/angular.min.js"></script>
+    <script type="text/javascript" src="https://code.angularjs.org/1.2.24/angular-route.min.js"></script>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/angular-ui-router/0.2.10/angular-ui-router.min.js"></script>
+
+    <script type="text/javascript">
+
+        var bF = angular.module('ytfeed', ['ngRoute','ui.router'])
+
+        /**
+         * Routing
+         *
+         * This is simple UI routing inside the single-page application
+         */
+
+        .config(['$stateProvider', '$urlRouterProvider', '$locationProvider', function($stateProvider, $urlRouterProvider, $locationProvider) {
+
+            $urlRouterProvider.otherwise('/');
+
+            $stateProvider.
+                state('recentView', {
+                    url: '/recent',
+                    templateUrl: 'recent.html',
+                    controller: function($scope, Videos) {
+                        $scope.videos = Videos;
+                    },
+                    resolve: {
+                        Videos: function ($feedService) {
+                            return $feedService.getRecent('GoogleDevelopers', 5, 'published');
+                        }
+                    }
+                }).
+                state('detailsView', {
+                    url: '/video/:videoId',
+                    templateUrl: 'details.html',
+                    controller: function($scope, Video) {
+                        $scope.video = Video;
+                    },
+                    resolve: {
+                        Video: function ($feedService, $stateParams) {
+                            return $feedService.getDetails($stateParams.videoId);
+                        }
+                    }
+                }).
+                state('switch', {
+                    url: '/',
+                    controller: function($scope, $state) {
+                        if (kik.message) {
+                            $state.go('detailsView', { videoId: kik.message.videoId });
+                        } else {
+                            $state.go('recentView');
+                        }
+                    }
+                })
+            ;
+
+        }])
+
+        .directive('kikbtn', function() {
+            return {
+                restrict: 'A',
+
+                link: function(scope, element, attrs) {
+
+                    var kikdata = {
+                        title: attrs.title,
+                        text: attrs.description,
+                        pic: attrs.imagesrc || false,
+                        big: (attrs.imagesrc) ? true : false,
+                        noForward: (attrs.forward) ? false : true,
+                        data: { videoId: attrs.id || false }
+                    };
+
+                    // implement onclick handler;
+                    element.on('click', function(e) {
+                        scope.$apply(function() {
+                            if (typeof kik !== 'undefined') {
+                                try {
+                                    kik.send(kikdata);
+                                    return false;
+                                } catch (err) {
+                                    //console.log(err);
+                                    return false;
+                                }
+                            }
+                        });
+                    });
+
+                }
+            }
+        })
+
+        /**
+         * Feed Service
+         *
+         * This would be a simple service to get a youtube feed, or a single video
+         * Sends back an added parameter of trustedUrl
+         */
+
+        .factory('$feedService', ['$sce', '$http', '$q', function($sce, $http, $q) {
+
+            function attachTrustedUrl(video) {
+                return $sce.trustAsResourceUrl('//www.youtube.com/embed/'+video.id+'?rel=0&autohide=1&showinfo=0');
+            }
+
+            return {
+
+                getRecent: function(channel, limit, order) {
+                    var d = $q.defer();
+                    $http.
+                        get('https://gdata.youtube.com/feeds/api/videos?q='+channel+'&v=2&alt=jsonc&orderby='+order).
+                        success(function(response) {
+                            return d.resolve(response.data.items);
+                        })
+                    return d.promise;
+                },
+
+
+                getDetails: function(id) {
+                    var d = $q.defer();
+                    $http.
+                        get('https://gdata.youtube.com/feeds/api/videos/'+id+'?v=2&alt=jsonc').
+                        success(function(response) {
+                            var tmpVideo = response.data;
+                            tmpVideo.trustedUrl = attachTrustedUrl(tmpVideo);
+                            return d.resolve(tmpVideo);
+                        });
+                    return d.promise;
+                }
+
+            }
+
+        }])
+
+        .filter('characters', function () {
+            return function (input, chars, breakOnWord) {
+                if (isNaN(chars)) return input;
+                if (chars <= 0) return '';
+                if (input && input.length > chars) {
+                    input = input.substring(0, chars);
+
+                    if (!breakOnWord) {
+                        var lastspace = input.lastIndexOf(' ');
+                        //get last space
+                        if (lastspace !== -1) {
+                            input = input.substr(0, lastspace);
+                        }
+                    }else{
+                        while(input.charAt(input.length-1) === ' '){
+                            input = input.substr(0, input.length -1);
+                        }
+                    }
+                    return input + '...';
+                }
+                return input;
+            };
+        });
+
+
+    </script>
+</body>
+</html>
