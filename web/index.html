@@ -67,8 +67,8 @@
     <script type="text/ng-template" id="recent.html">
         <div class="row">
             <div class="col-lg-2 col-md-3 col-sm-6 col-xs-6" ng-repeat="video in videos">
-                <a class="thumbnail" ui-sref="detailsView({ videoId: video.id })">
-                    <img ng-src="{{video.thumbnail.hqDefault}}" class="img-responsive">
+                <a class="thumbnail" ui-sref="detailsView({ videoId: video.id.videoId })">
+                    <img ng-src="{{video.snippet.thumbnails.high.url}}" class="img-responsive">
                 </a>
             </div>
         </div>
@@ -82,18 +82,20 @@
                 </div>
             </div>
             <div class="col-lg-4 col-md-5 col-sm-12 col-xs-12">
-                <h3>{{video.title}}</h3>
-                <p class="video-description">{{video.description}}</p>
+                <h3>{{video.snippet.title}}</h3>
+                <p class="video-description">{{video.snippet.description}}</p>
                 <hr>
                 <div class="row">
+                    
                     <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4" style="line-height:13px;">
-                        {{video.viewCount | number:0}}<br>
+                        {{video.statistics.viewCount | number:0}}<br>
                         <b class="video-description">VIEWS</b>
                     </div>
+                    
 
                     <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8 socials">
                         <div class="clearfix">
-                            <button kikbtn class="btn btn-link kik_it" id="{{video.id}}" title="{{video.title}}" description="{{video.description}}" imagesrc="{{video.thumbnail.hqDefault}}"><img src="sharebtn.png" width="32"></button>
+                            <button kikbtn class="btn btn-link kik_it" id="{{video.id}}" title="{{video.snippet.title}}" description="{{video.snippet.description}}" imagesrc="{{video.snippet.thumbnails.high.url}}"><img src="sharebtn.png" width="32"></button>
                         </div>
                     </div>
                 </div>
@@ -127,11 +129,12 @@
                     url: '/recent',
                     templateUrl: 'recent.html',
                     controller: function($scope, Videos) {
+                        console.log(Videos);
                         $scope.videos = Videos;
                     },
                     resolve: {
                         Videos: function ($feedService) {
-                            return $feedService.getRecent('GoogleDevelopers', 5, 'published');
+                            return $feedService.getRecent('GoogleDevelopers', 25, 'date');
                         }
                     }
                 }).
@@ -192,8 +195,10 @@
                     });
 
                 }
-            }
+            };
         })
+
+        .constant('API_KEY', '') // place your ID here. 
 
         /**
          * Feed Service
@@ -202,7 +207,7 @@
          * Sends back an added parameter of trustedUrl
          */
 
-        .factory('$feedService', ['$sce', '$http', '$q', function($sce, $http, $q) {
+        .factory('$feedService', ['$sce', '$http', '$q', 'API_KEY', function($sce, $http, $q, API_KEY) {
 
             function attachTrustedUrl(video) {
                 return $sce.trustAsResourceUrl('//www.youtube.com/embed/'+video.id+'?rel=0&autohide=1&showinfo=0');
@@ -211,29 +216,45 @@
             return {
 
                 getRecent: function(channel, limit, order) {
+
+                    if (!API_KEY || API_KEY === '') {
+                        return console.log('You are missing your API KEY!');
+                    }
+
                     var d = $q.defer();
                     $http.
-                        get('https://gdata.youtube.com/feeds/api/videos?q='+channel+'&v=2&alt=jsonc&orderby='+order).
+                        get('https://www.googleapis.com/youtube/v3/search?q='+channel+'&part=snippet&type=video&orderby='+order+'&maxResults=' + limit + '&key=' + API_KEY).
                         success(function(response) {
-                            return d.resolve(response.data.items);
-                        })
+                            return d.resolve(response.items);
+                        });
                     return d.promise;
                 },
 
 
                 getDetails: function(id) {
+
+                    if (!API_KEY || API_KEY === '') {
+                        return console.log('You are missing your API KEY!');
+                    }
+                    
                     var d = $q.defer();
                     $http.
-                        get('https://gdata.youtube.com/feeds/api/videos/'+id+'?v=2&alt=jsonc').
+                        get('https://www.googleapis.com/youtube/v3/videos?id='+id+'&part=snippet,statistics&key=' + API_KEY).
                         success(function(response) {
-                            var tmpVideo = response.data;
-                            tmpVideo.trustedUrl = attachTrustedUrl(tmpVideo);
-                            return d.resolve(tmpVideo);
+
+                            if (response.items && response.items.length) {
+                                tmpVideo = response.items[0];
+                                tmpVideo.trustedUrl = attachTrustedUrl(tmpVideo);
+                                console.log(tmpVideo);
+                                return d.resolve(tmpVideo);
+                            } else {
+                                return d.reject('could not find');
+                            }
                         });
                     return d.promise;
                 }
 
-            }
+            };
 
         }])
 
