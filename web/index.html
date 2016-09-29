@@ -1,7 +1,7 @@
 <!doctype html>
 
 <html lang="en" ng-app="ytfeed">
-<head>
+  <head>
     <meta charset="utf-8">
 
     <title>YouTube Feed Viewer</title>
@@ -12,37 +12,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/e42c87ea15.css">
 
     <style type="text/css">
-        body { background-color:#f5f5f5; }
+      body { background-color:#f5f5f5; }
 
-        .container { margin-top: 100px; padding-bottom:20px;}
+      .container { margin-top: 100px; padding-bottom:20px;}
 
-        .video-description { font-size:11px; line-height: 16px; }
-        .socials {}
-        .socials .kik_it { float:right; margin-left:5px; margin-top:0px;}
+      .video-description { font-size:11px; line-height: 16px; }
+      .socials {}
+      .socials .kik_it { float:right; margin-left:5px; margin-top:0px;}
 
-        header, #header {
-            position:fixed;
-            top:0px;
-            width:100%;
-            height: 80px;
-            background-color: #fff;
-            z-index:9999;
-        }
+      header, #header {
+        position:fixed;
+        top:0px;
+        width:100%;
+        height: 50px;
+        background-color: #fff;
+        z-index:9999;
+        padding: 15px;
+        display: inline-flex;
+      }
 
-        header a, #header a {
-            display:block;
-            padding:12px 0 0px;
-            text-align:center;
-        }
-
-        .alert ul, .alert ul li { margin:0; padding:0; list-style: none; }
-        .alert ul li { border-bottom: 1px dotted #999; font-size:10px; margin-bottom: 3px; padding-bottom:3px; }
+      .alert ul, .alert ul li { margin:0; padding:0; list-style: none; }
+      .alert ul li { border-bottom: 1px dotted #999; font-size:10px; margin-bottom: 3px; padding-bottom:3px; }
+      .main-header {background: #e62117 !important;}
+      .text-light {color: #ffffff;}
+      .padding-left-5 {padding-left: 5px;}
+      .header-play-icon { font-size: 1.5em; }
+      .fixed-video {width: 150px; height: 115px;}
+      .no-border {border: none;}
     </style>
 
     <!--[if lt IE 9]>
-        <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
 
     <!-- kik specific -->
@@ -50,57 +53,84 @@
     <link rel="canonical" href="">
     <meta name="kik-unsupported" content="android-2.3,ios-5">
 
-</head>
+  </head>
 
-<body>
+  <body>
 
-    <header id="header">
-        <a ui-sref="recentView">YouTube Feed Viewer <br> Place logo here</a>
+    <header id="header" class="main-header">
+      <i class="fa fa-play text-light header-play-icon"></i>
+      <a ui-sref="recentView" class="text-light padding-left-5">YouTube Feed Viewer
+        <!-- <img class="col-xs-3 pull-right" src="https://www.youtube.com/yt/brand/media/image/YouTube-logo-full_color.png" /> -->
+      </a>
     </header>
 
     <div class="container">
-        <div ui-view autoscroll="false"></div>
+      <div ui-view autoscroll="false"></div>
     </div>
 
     <!-- Add Templates -->
 
     <script type="text/ng-template" id="recent.html">
-        <div class="row">
-            <div class="col-lg-2 col-md-3 col-sm-6 col-xs-6" ng-repeat="video in videos">
-                <a class="thumbnail" ui-sref="detailsView({ videoId: video.id.videoId })">
-                    <img ng-src="{{video.snippet.thumbnails.high.url}}" class="img-responsive">
-                </a>
-            </div>
-        </div>
+      <h4>Today's Most Viewed</h4>
+      <div class="table-responsive no-border">
+        <table class="table">
+          <tbody>
+            <tr>
+              <td ng-repeat="video in videos">
+                <div class="img-thumbnail fixed-video" ui-sref="detailsView({ videoId: video.id.videoId })">
+                  <img ng-src="{{video.snippet.thumbnails.high.url}}" class="img-responsive">
+                </div>
+              </td>
+            <tr>
+          </tbody>
+        </table>
+      </div>
+    </script>
+
+    <script type="text/ng-template" id="trending.html">
+      <h4>Recently Viewed</h4>
+      <div class="table-responsive no-border">
+        <table class="table">
+          <tbody>
+            <tr style="height: 150px;">
+              <td ng-repeat="video in videos">
+                <div class="img-thumbnail fixed-video" ui-sref="detailsView({ videoId: video.id.videoId })">
+                  <img ng-src="{{video.snippet.thumbnails.high.url}}" class="img-responsive">
+                </div>
+              </td>
+            <tr>
+          </tbody>
+        </table>
+      </div>
     </script>
 
     <script type="text/ng-template" id="details.html">
-        <div class="row">
-            <div class="col-lg-8 col-md-7 col-sm-12 col-xs-12">
-                <div class="embed-responsive embed-responsive-4by3">
-                    <iframe class="embed-responsive-item" ng-src="{{video.trustedUrl}}" frameborder=0 allowfullscreen></iframe>
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-5 col-sm-12 col-xs-12">
-                <h3>{{video.snippet.title}}</h3>
-                <p class="video-description">{{video.snippet.description}}</p>
-                <hr>
-                <div class="row">
-                    
-                    <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4" style="line-height:13px;">
-                        {{video.statistics.viewCount | number:0}}<br>
-                        <b class="video-description">VIEWS</b>
-                    </div>
-                    
-
-                    <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8 socials">
-                        <div class="clearfix">
-                            <button kikbtn class="btn btn-link kik_it" id="{{video.id}}" title="{{video.snippet.title}}" description="{{video.snippet.description}}" imagesrc="{{video.snippet.thumbnails.high.url}}"><img src="sharebtn.png" width="32"></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <div class="row">
+        <div class="col-lg-8 col-md-7 col-sm-12 col-xs-12">
+          <div class="embed-responsive embed-responsive-4by3">
+            <iframe class="embed-responsive-item" ng-src="{{video.trustedUrl}}" frameborder=0 allowfullscreen></iframe>
+          </div>
         </div>
+        <div class="col-lg-4 col-md-5 col-sm-12 col-xs-12">
+          <h3>{{video.snippet.title}}</h3>
+          <p class="video-description">{{video.snippet.description}}</p>
+          <hr>
+          <div class="row">
+            
+            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4" style="line-height:13px;">
+              {{video.statistics.viewCount | number:0}}<br>
+              <b class="video-description">VIEWS</b>
+            </div>
+            
+
+            <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8 socials">
+              <div class="clearfix">
+                <button kikbtn class="btn btn-link kik_it" id="{{video.id}}" title="{{video.snippet.title}}" description="{{video.snippet.description}}" imagesrc="{{video.snippet.thumbnails.high.url}}"><img src="sharebtn.png" width="32"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </script>
 
     <!-- Add Scripts -->
@@ -112,177 +142,190 @@
 
     <script type="text/javascript">
 
-        var bF = angular.module('ytfeed', ['ngRoute','ui.router'])
+      var bF = angular.module('ytfeed', ['ngRoute','ui.router'])
 
-        /**
-         * Routing
-         *
-         * This is simple UI routing inside the single-page application
-         */
+      /**
+       * Routing
+       *
+       * This is simple UI routing inside the single-page application
+       */
 
-        .config(['$stateProvider', '$urlRouterProvider', '$locationProvider', function($stateProvider, $urlRouterProvider, $locationProvider) {
+      .config(['$stateProvider', '$urlRouterProvider', '$locationProvider', function($stateProvider, $urlRouterProvider, $locationProvider) {
 
-            $urlRouterProvider.otherwise('/');
+        $urlRouterProvider.otherwise('/');
 
-            $stateProvider.
-                state('recentView', {
-                    url: '/recent',
-                    templateUrl: 'recent.html',
-                    controller: function($scope, Videos) {
-                        console.log(Videos);
-                        $scope.videos = Videos;
-                    },
-                    resolve: {
-                        Videos: function ($feedService) {
-                            return $feedService.getRecent('GoogleDevelopers', 25, 'date');
-                        }
-                    }
-                }).
-                state('detailsView', {
-                    url: '/video/:videoId',
-                    templateUrl: 'details.html',
-                    controller: function($scope, Video) {
-                        $scope.video = Video;
-                    },
-                    resolve: {
-                        Video: function ($feedService, $stateParams) {
-                            return $feedService.getDetails($stateParams.videoId);
-                        }
-                    }
-                }).
-                state('switch', {
-                    url: '/',
-                    controller: function($scope, $state) {
-                        if (kik.message) {
-                            $state.go('detailsView', { videoId: kik.message.videoId });
-                        } else {
-                            $state.go('recentView');
-                        }
-                    }
-                })
-            ;
+        $stateProvider.
+          state('recentView', {
+            url: '/recent',
+            templateUrl: 'recent.html',
+            controller: function($scope, Videos) {
+              console.log(Videos);
+              $scope.videos = Videos;
+            },
+            resolve: {
+              Videos: function ($feedService) {
+                return $feedService.getRecent('GoogleDevelopers', 25, 'date');
+              }
+            }
+          }).
+          state('trendingView', {
+            url: '/recent',
+            templateUrl: 'trending.html',
+            controller: function($scope, Videos) {
+              console.log(Videos);
+              $scope.videos = Videos;
+            },
+            resolve: {
+              Videos: function ($feedService) {
+                return $feedService.getRecent('GoogleDevelopers', 25, 'date');
+              }
+            }
+          }).
+          state('detailsView', {
+            url: '/video/:videoId',
+            templateUrl: 'details.html',
+            controller: function($scope, Video) {
+              $scope.video = Video;
+            },
+            resolve: {
+              Video: function ($feedService, $stateParams) {
+                return $feedService.getDetails($stateParams.videoId);
+              }
+            }
+          }).
+          state('switch', {
+            url: '/',
+            controller: function($scope, $state) {
+              if (kik.message) {
+                $state.go('detailsView', { videoId: kik.message.videoId });
+              } else {
+                $state.go('recentView');
+              }
+            }
+          })
+        ;
 
-        }])
+      }])
 
-        .directive('kikbtn', function() {
-            return {
-                restrict: 'A',
+      .directive('kikbtn', function() {
+        return {
+          restrict: 'A',
 
-                link: function(scope, element, attrs) {
+          link: function(scope, element, attrs) {
 
-                    var kikdata = {
-                        title: attrs.title,
-                        text: attrs.description,
-                        pic: attrs.imagesrc || false,
-                        big: (attrs.imagesrc) ? true : false,
-                        noForward: (attrs.forward) ? false : true,
-                        data: { videoId: attrs.id || false }
-                    };
-
-                    // implement onclick handler;
-                    element.on('click', function(e) {
-                        scope.$apply(function() {
-                            if (typeof kik !== 'undefined') {
-                                try {
-                                    kik.send(kikdata);
-                                    return false;
-                                } catch (err) {
-                                    //console.log(err);
-                                    return false;
-                                }
-                            }
-                        });
-                    });
-
-                }
+            var kikdata = {
+              title: attrs.title,
+              text: attrs.description,
+              pic: attrs.imagesrc || false,
+              big: (attrs.imagesrc) ? true : false,
+              noForward: (attrs.forward) ? false : true,
+              data: { videoId: attrs.id || false }
             };
-        })
 
-        .constant('API_KEY', 'AIzaSyCQDfngMbKeq01pjO7aCPSE2cL1eteMrsY') // place your ID here. 
+            // implement onclick handler;
+            element.on('click', function(e) {
+              scope.$apply(function() {
+                if (typeof kik !== 'undefined') {
+                  try {
+                    kik.send(kikdata);
+                    return false;
+                  } catch (err) {
+                    //console.log(err);
+                    return false;
+                  }
+                }
+              });
+            });
 
-        /**
-         * Feed Service
-         *
-         * This would be a simple service to get a youtube feed, or a single video
-         * Sends back an added parameter of trustedUrl
-         */
+          }
+        };
+      })
 
-        .factory('$feedService', ['$sce', '$http', '$q', 'API_KEY', function($sce, $http, $q, API_KEY) {
+      .constant('API_KEY', 'AIzaSyCQDfngMbKeq01pjO7aCPSE2cL1eteMrsY') // place your ID here. 
 
-            function attachTrustedUrl(video) {
-                return $sce.trustAsResourceUrl('//www.youtube.com/embed/'+video.id+'?rel=0&autohide=1&showinfo=0');
+      /**
+       * Feed Service
+       *
+       * This would be a simple service to get a youtube feed, or a single video
+       * Sends back an added parameter of trustedUrl
+       */
+
+      .factory('$feedService', ['$sce', '$http', '$q', 'API_KEY', function($sce, $http, $q, API_KEY) {
+
+        function attachTrustedUrl(video) {
+          return $sce.trustAsResourceUrl('//www.youtube.com/embed/'+video.id+'?rel=0&autohide=1&showinfo=0');
+        }
+
+        return {
+
+          getRecent: function(channel, limit, order) {
+
+            if (!API_KEY || API_KEY === '') {
+              return console.log('You are missing your API KEY!');
             }
 
-            return {
-
-                getRecent: function(channel, limit, order) {
-
-                    if (!API_KEY || API_KEY === '') {
-                        return console.log('You are missing your API KEY!');
-                    }
-
-                    var d = $q.defer();
-                    $http.
-                        get('https://www.googleapis.com/youtube/v3/search?q='+channel+'&part=snippet&type=video&orderby='+order+'&maxResults=' + limit + '&key=' + API_KEY).
-                        success(function(response) {
-                            return d.resolve(response.items);
-                        });
-                    return d.promise;
-                },
+            var d = $q.defer();
+            $http.
+              get('https://www.googleapis.com/youtube/v3/search?q='+channel+'&part=snippet&type=video&orderby='+order+'&maxResults=' + limit + '&key=' + API_KEY).
+              success(function(response) {
+                return d.resolve(response.items);
+              });
+            return d.promise;
+          },
 
 
-                getDetails: function(id) {
+          getDetails: function(id) {
 
-                    if (!API_KEY || API_KEY === '') {
-                        return console.log('You are missing your API KEY!');
-                    }
-                    
-                    var d = $q.defer();
-                    $http.
-                        get('https://www.googleapis.com/youtube/v3/videos?id='+id+'&part=snippet,statistics&key=' + API_KEY).
-                        success(function(response) {
+            if (!API_KEY || API_KEY === '') {
+              return console.log('You are missing your API KEY!');
+            }
+            
+            var d = $q.defer();
+            $http.
+              get('https://www.googleapis.com/youtube/v3/videos?id='+id+'&part=snippet,statistics&key=' + API_KEY).
+              success(function(response) {
 
-                            if (response.items && response.items.length) {
-                                tmpVideo = response.items[0];
-                                tmpVideo.trustedUrl = attachTrustedUrl(tmpVideo);
-                                console.log(tmpVideo);
-                                return d.resolve(tmpVideo);
-                            } else {
-                                return d.reject('could not find');
-                            }
-                        });
-                    return d.promise;
+                if (response.items && response.items.length) {
+                  tmpVideo = response.items[0];
+                  tmpVideo.trustedUrl = attachTrustedUrl(tmpVideo);
+                  console.log(tmpVideo);
+                  return d.resolve(tmpVideo);
+                } else {
+                  return d.reject('could not find');
                 }
+              });
+            return d.promise;
+          }
 
-            };
+        };
 
-        }])
+      }])
 
-        .filter('characters', function () {
-            return function (input, chars, breakOnWord) {
-                if (isNaN(chars)) return input;
-                if (chars <= 0) return '';
-                if (input && input.length > chars) {
-                    input = input.substring(0, chars);
+      .filter('characters', function () {
+        return function (input, chars, breakOnWord) {
+          if (isNaN(chars)) return input;
+          if (chars <= 0) return '';
+          if (input && input.length > chars) {
+            input = input.substring(0, chars);
 
-                    if (!breakOnWord) {
-                        var lastspace = input.lastIndexOf(' ');
-                        //get last space
-                        if (lastspace !== -1) {
-                            input = input.substr(0, lastspace);
-                        }
-                    }else{
-                        while(input.charAt(input.length-1) === ' '){
-                            input = input.substr(0, input.length -1);
-                        }
-                    }
-                    return input + '...';
-                }
-                return input;
-            };
-        });
+            if (!breakOnWord) {
+              var lastspace = input.lastIndexOf(' ');
+              //get last space
+              if (lastspace !== -1) {
+                input = input.substr(0, lastspace);
+              }
+            }else{
+              while(input.charAt(input.length-1) === ' '){
+                input = input.substr(0, input.length -1);
+              }
+            }
+            return input + '...';
+          }
+          return input;
+        };
+      });
 
 
     </script>
-</body>
+  </body>
 </html>
