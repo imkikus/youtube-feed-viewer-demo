@@ -37,11 +37,15 @@
       .alert ul, .alert ul li { margin:0; padding:0; list-style: none; }
       .alert ul li { border-bottom: 1px dotted #999; font-size:10px; margin-bottom: 3px; padding-bottom:3px; }
       .main-header {background: #e62117 !important;}
+      .main-header a{text-decoration: none;}
       .text-light {color: #ffffff;}
       .padding-left-5 {padding-left: 5px;}
       .header-play-icon { font-size: 1.5em; }
       .fixed-video {width: 150px; height: 115px;}
       .no-border {border: none;}
+      .full-width {width: 100%;}
+      .header-title {vertical-align: top;}
+      .margin-top-50 {margin-top: 50px;}
     </style>
 
     <!--[if lt IE 9]>
@@ -58,27 +62,41 @@
   <body>
 
     <header id="header" class="main-header">
-      <i class="fa fa-play text-light header-play-icon"></i>
-      <a ui-sref="recentView" class="text-light padding-left-5">YouTube Feed Viewer
-        <!-- <img class="col-xs-3 pull-right" src="https://www.youtube.com/yt/brand/media/image/YouTube-logo-full_color.png" /> -->
+      <a class="full-width">
+        <i class="fa fa-play text-light header-play-icon"></i>
+        <span ui-sref="displayAll" class="text-light padding-left-5 header-title">YouTube Feed Viewer</span>
+        <i class="fa fa-search pull-right text-light header-play-icon" ng-click="toggleSearch = !toggleSearch"></i>
       </a>
     </header>
 
-    <div class="container">
+    <div class="container margin-top-50">
+      <div class="row search-bar" ng-show="toggleSearch">
+        <div class="col-lg-6">
+          <div class="input-group">
+            <input type="text" class="form-control" placeholder="Search for..." ng-model="searchText">
+            <span class="input-group-btn">
+              <button class="btn btn-default" type="button" ng-click="search(searchText)">Go!</button>
+            </span>
+          </div>
+        </div>
+      </div>
       <div ui-view autoscroll="false"></div>
+      <div ui-view="recentView"></div>
+      <div ui-view="mostViewed"></div>
+      <div ui-view="search"></div>
     </div>
 
     <!-- Add Templates -->
 
     <script type="text/ng-template" id="recent.html">
-      <h4>Today's Most Viewed</h4>
+      <h4 class="margin-top-50">Recent Videos</h4>
       <div class="table-responsive no-border">
         <table class="table">
           <tbody>
             <tr>
               <td ng-repeat="video in videos">
                 <div class="img-thumbnail fixed-video" ui-sref="detailsView({ videoId: video.id.videoId })">
-                  <img ng-src="{{video.snippet.thumbnails.high.url}}" class="img-responsive">
+                  <img ng-src="{{video.snippet.thumbnails.high.url}}" on-error-src="https://s16.postimg.org/5rybjpzd1/default_thumbnail.jpg" class="img-responsive">
                 </div>
               </td>
             <tr>
@@ -87,15 +105,15 @@
       </div>
     </script>
 
-    <script type="text/ng-template" id="trending.html">
-      <h4>Recently Viewed</h4>
+    <script type="text/ng-template" id="most-viewed.html">
+      <h4>Most Viewed</h4>
       <div class="table-responsive no-border">
         <table class="table">
           <tbody>
             <tr style="height: 150px;">
               <td ng-repeat="video in videos">
                 <div class="img-thumbnail fixed-video" ui-sref="detailsView({ videoId: video.id.videoId })">
-                  <img ng-src="{{video.snippet.thumbnails.high.url}}" class="img-responsive">
+                  <img ng-src="{{video.snippet.thumbnails.high.url}}" on-error-src="https://s16.postimg.org/5rybjpzd1/default_thumbnail.jpg" class="img-responsive">
                 </div>
               </td>
             <tr>
@@ -133,6 +151,17 @@
       </div>
     </script>
 
+    <script type="text/ng-template" id="search.html">
+      <h4 class="margin-top-50">Search Results</h4>
+      <div class="row">
+        <div class="col-lg-2 col-md-3 col-sm-6 col-xs-6" ng-repeat="video in videos">
+          <a class="thumbnail" ui-sref="detailsView({ videoId: video.id.videoId })">
+            <img ng-src="{{video.snippet.thumbnails.high.url}}" on-error-src="https://s16.postimg.org/5rybjpzd1/default_thumbnail.jpg" class="img-responsive">
+          </a>
+        </div>
+      </div>
+    </script>
+
     <!-- Add Scripts -->
 
     <script type="text/javascript" src="http://cdn.kik.com/kik/1.0.18/kik.js"></script>
@@ -152,32 +181,47 @@
 
       .config(['$stateProvider', '$urlRouterProvider', '$locationProvider', function($stateProvider, $urlRouterProvider, $locationProvider) {
 
+        var channel_name = 'idreammovies';
+
         $urlRouterProvider.otherwise('/');
 
         $stateProvider.
-          state('recentView', {
-            url: '/recent',
-            templateUrl: 'recent.html',
-            controller: function($scope, Videos) {
-              console.log(Videos);
-              $scope.videos = Videos;
-            },
-            resolve: {
-              Videos: function ($feedService) {
-                return $feedService.getRecent('GoogleDevelopers', 25, 'date');
-              }
-            }
-          }).
-          state('trendingView', {
-            url: '/recent',
-            templateUrl: 'trending.html',
-            controller: function($scope, Videos) {
-              console.log(Videos);
-              $scope.videos = Videos;
-            },
-            resolve: {
-              Videos: function ($feedService) {
-                return $feedService.getRecent('GoogleDevelopers', 25, 'date');
+          state('displayAll', {
+            url: '/all',
+            views: {
+              'recentView': {
+                templateUrl: 'recent.html',
+                controller: function($scope, Videos) {
+                  $scope.videos = Videos;
+                },
+                resolve: {
+                  Videos: function ($feedService, $rootScope) {
+                    var search_query;
+                    if ($rootScope.search_string) {
+                      search_query = channel_name + ' ' + $rootScope.search_string;
+                    } else {
+                      search_query = channel_name;
+                    }
+                    return $feedService.getRecent(search_query, 20, 'date');
+                  }
+                }
+              },
+              'mostViewed': {
+                templateUrl: 'most-viewed.html',
+                controller: function($scope, Videos) {
+                  $scope.videos = Videos;
+                },
+                resolve: {
+                  Videos: function ($feedService, $rootScope) {
+                    var search_query;
+                    if ($rootScope.search_string) {
+                      search_query = channel_name + ' ' + $rootScope.search_string;
+                    } else {
+                      search_query = channel_name;
+                    }
+                    return $feedService.getMostViewed(search_query, 20, 'viewCount');
+                  }
+                }
               }
             }
           }).
@@ -199,12 +243,28 @@
               if (kik.message) {
                 $state.go('detailsView', { videoId: kik.message.videoId });
               } else {
-                $state.go('recentView');
+                $state.go('displayAll');
               }
             }
-          })
-        ;
-
+          }).
+          state('search', {
+            url: '/search',
+            templateUrl: 'search.html',
+            controller: function($scope, Video) {
+              $scope.videos = Video;
+            },
+            resolve: {
+              Video: function($feedService, $rootScope) {
+                var search_query;
+                if ($rootScope.search_string) {
+                  search_query = channel_name + ' ' + $rootScope.search_string;
+                } else {
+                  search_query = channel_name;
+                }
+                return $feedService.getSearchedVideos(search_query, 20, 'date');
+              }
+            }
+          });
       }])
 
       .directive('kikbtn', function() {
@@ -230,7 +290,6 @@
                     kik.send(kikdata);
                     return false;
                   } catch (err) {
-                    //console.log(err);
                     return false;
                   }
                 }
@@ -239,6 +298,18 @@
 
           }
         };
+      })
+
+      .directive('onErrorSrc', function() {
+        return {
+          link: function(scope, element, attrs) {
+            element.bind('error', function() {
+              if (attrs.src != attrs.onErrorSrc) {
+                attrs.$set('src', attrs.onErrorSrc);
+              }
+            });
+          }
+        }
       })
 
       .constant('API_KEY', 'AIzaSyCQDfngMbKeq01pjO7aCPSE2cL1eteMrsY') // place your ID here. 
@@ -264,15 +335,32 @@
               return console.log('You are missing your API KEY!');
             }
 
+            url = 'https://www.googleapis.com/youtube/v3/search?q='+channel+'&part=snippet&type=video&order='+order+'&maxResults=' + limit + '&key=' + API_KEY;
+
             var d = $q.defer();
             $http.
-              get('https://www.googleapis.com/youtube/v3/search?q='+channel+'&part=snippet&type=video&orderby='+order+'&maxResults=' + limit + '&key=' + API_KEY).
+              get(url).
               success(function(response) {
                 return d.resolve(response.items);
               });
             return d.promise;
           },
 
+          getMostViewed: function(channel, limit, order) {
+            if (!API_KEY || API_KEY === '') {
+              return console.log('You are missing your API Key!');
+            }
+
+            url = 'https://www.googleapis.com/youtube/v3/search?q='+channel+'&part=snippet&type=video&order='+order+'&maxResults='+limit+'&key='+API_KEY;
+
+            var d = $q.defer();
+            $http.
+              get(url).
+              success(function(response) {
+                return d.resolve(response.items);
+              });
+            return d.promise;
+          },
 
           getDetails: function(id) {
 
@@ -293,6 +381,22 @@
                 } else {
                   return d.reject('could not find');
                 }
+              });
+            return d.promise;
+          },
+
+          getSearchedVideos: function(channel, limit, order) {
+            if (!API_KEY || API_KEY === '') {
+              return console.log('You are missing your API Key!');
+            }
+
+            url = 'https://www.googleapis.com/youtube/v3/search?q='+channel+'&part=snippet&type=video&order='+order+'&maxResults='+limit+'&key='+API_KEY;
+
+            var d = $q.defer();
+            $http.
+              get(url).
+              success(function(response) {
+                return d.resolve(response.items);
               });
             return d.promise;
           }
@@ -323,9 +427,14 @@
           }
           return input;
         };
+      })
+
+      .run(function($rootScope, $state) {
+        $rootScope.search = function(string) {
+          $rootScope.search_string = string;
+          $state.transitionTo('search');
+        };
       });
-
-
     </script>
   </body>
 </html>
