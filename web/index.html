@@ -50,6 +50,13 @@
     <link rel="canonical" href="">
     <meta name="kik-unsupported" content="android-2.3,ios-5">
 
+    <!-- Appjs -->
+    <!-- <script type="text/javascript" src="/js/zepto.js"></script>
+    <script type="text/javascript" src="/js/app.min.js"></script> -->
+
+    <!-- <script src="//zeptojs.com/zepto.min.js"></script>
+    <script src="//cdn.kik.com/app/3.0.0/app.min.js"></script> -->
+
 </head>
 
 <body>
@@ -134,7 +141,11 @@
                     },
                     resolve: {
                         Videos: function ($feedService) {
-                            return $feedService.getRecent('GoogleDevelopers', 25, 'date');
+
+                            //sort allowed values
+                            // Allowed values: [date, rating, relevance, title, videocount, viewcount]
+
+                            return $feedService.getRecent('idreammovies', 20, 'date');
                         }
                     }
                 }).
@@ -221,9 +232,11 @@
                         return console.log('You are missing your API KEY!');
                     }
 
+                    url = 'https://www.googleapis.com/youtube/v3/search?q='+channel+'&part=snippet&type=video&order='+order+'&maxResults=' + limit + '&key=' + API_KEY;
+
                     var d = $q.defer();
                     $http.
-                        get('https://www.googleapis.com/youtube/v3/search?q='+channel+'&part=snippet&type=video&orderby='+order+'&maxResults=' + limit + '&key=' + API_KEY).
+                        get(url).
                         success(function(response) {
                             return d.resolve(response.items);
                         });
