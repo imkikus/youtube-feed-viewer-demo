@@ -17,7 +17,7 @@
     <style type="text/css">
       body { background-color:#f5f5f5; }
 
-      .container { margin-top: 100px; padding-bottom:20px;}
+      .container {margin-top: 45px; padding-bottom:20px;}
 
       .video-description { font-size:11px; line-height: 16px; }
       .socials {}
@@ -41,11 +41,14 @@
       .text-light {color: #ffffff;}
       .padding-left-5 {padding-left: 5px;}
       .header-play-icon { font-size: 1.5em; }
-      .fixed-video {width: 150px; height: 115px;}
+      .fixed-video {width: 200px; height: 155px;}
       .no-border {border: none;}
       .full-width {width: 100%;}
       .header-title {vertical-align: top;}
       .margin-top-50 {margin-top: 50px;}
+      .back-button {position: absolute; top: 18px; left: 2px;}
+      .subheader {position: fixed; top: 50px; z-index:1;}
+      .border-radius-none {border-radius: 0;}
     </style>
 
     <!--[if lt IE 9]>
@@ -62,28 +65,32 @@
   <body>
 
     <header id="header" class="main-header">
+      <i class="fa fa-chevron-left text-light back-button" ng-click="goBack()" ng-show="showBackButton"></i>
       <a class="full-width">
         <i class="fa fa-play text-light header-play-icon"></i>
-        <span ui-sref="displayAll" class="text-light padding-left-5 header-title">YouTube Feed Viewer</span>
+        <span ui-sref="displayAll" class="text-light padding-left-5 header-title">iDream Movies</span>
         <i class="fa fa-search pull-right text-light header-play-icon" ng-click="toggleSearch = !toggleSearch"></i>
       </a>
     </header>
-
-    <div class="container margin-top-50">
+    <div class="subheader">
       <div class="row search-bar" ng-show="toggleSearch">
         <div class="col-lg-6">
           <div class="input-group">
-            <input type="text" class="form-control" placeholder="Search for..." ng-model="searchText">
+            <input type="text" class="form-control border-radius-none" placeholder="Search for..." ng-model="searchText">
             <span class="input-group-btn">
-              <button class="btn btn-default" type="button" ng-click="search(searchText)">Go!</button>
+              <button class="btn btn-default border-radius-none" type="button" ng-click="search(searchText);toggleSearch = !toggleSearch">Go!</button>
             </span>
           </div>
         </div>
       </div>
-      <div ui-view autoscroll="false"></div>
+    </div>
+
+    <div class="container">
+      <div ui-view autoscroll="false" class="margin-top-50"></div>
       <div ui-view="recentView"></div>
       <div ui-view="mostViewed"></div>
       <div ui-view="search"></div>
+      <div ui-view="relatedVideos"></div>
     </div>
 
     <!-- Add Templates -->
@@ -143,7 +150,7 @@
 
             <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8 socials">
               <div class="clearfix">
-                <button kikbtn class="btn btn-link kik_it" id="{{video.id}}" title="{{video.snippet.title}}" description="{{video.snippet.description}}" imagesrc="{{video.snippet.thumbnails.high.url}}"><img src="sharebtn.png" width="32"></button>
+                <p class="pull-right" ng-click="showRelatedVideos()"><em>related videos</em><i class="fa fa-chevron-right padding-left-5"></i></p>
               </div>
             </div>
           </div>
@@ -152,7 +159,7 @@
     </script>
 
     <script type="text/ng-template" id="search.html">
-      <h4 class="margin-top-50">Search Results</h4>
+      <h4 class="margin-top-50">{{searchTitle}}</h4>
       <div class="row">
         <div class="col-lg-2 col-md-3 col-sm-6 col-xs-6" ng-repeat="video in videos">
           <a class="thumbnail" ui-sref="detailsView({ videoId: video.id.videoId })">
@@ -187,7 +194,7 @@
 
         $stateProvider.
           state('displayAll', {
-            url: '/all',
+            url: '/home',
             views: {
               'recentView': {
                 templateUrl: 'recent.html',
@@ -228,8 +235,12 @@
           state('detailsView', {
             url: '/video/:videoId',
             templateUrl: 'details.html',
-            controller: function($scope, Video) {
+            controller: function($scope, $state, Video) {
               $scope.video = Video;
+
+              $scope.showRelatedVideos = function() {
+                $state.transitionTo('relatedVideos');
+              }
             },
             resolve: {
               Video: function ($feedService, $stateParams) {
@@ -251,6 +262,7 @@
             url: '/search',
             templateUrl: 'search.html',
             controller: function($scope, Video) {
+              $scope.searchTitle = "Search Results";
               $scope.videos = Video;
             },
             resolve: {
@@ -262,6 +274,25 @@
                   search_query = channel_name;
                 }
                 return $feedService.getSearchedVideos(search_query, 20, 'date');
+              }
+            }
+          }).
+          state('relatedVideos', {
+            url: '/related-videos',
+            templateUrl: 'search.html',
+            controller: function($scope, Video) {
+              $scope.searchTitle = "Related Videos";
+              $scope.videos = Video;
+            },
+            resolve: {
+              Video: function($feedService, $rootScope) {
+                var search_query;
+                if ($rootScope.search_string) {
+                  search_query = channel_name + ' ' + $rootScope.search_string;
+                } else {
+                  search_query = channel_name;
+                }
+                return $feedService.getSearchedVideos(search_query, 20, 'relevance');
               }
             }
           });
@@ -429,11 +460,19 @@
         };
       })
 
-      .run(function($rootScope, $state) {
+      .run(function($rootScope, $state, $window) {
         $rootScope.search = function(string) {
           $rootScope.search_string = string;
           $state.transitionTo('search');
-        };
+        }
+
+        $rootScope.goBack = function(){
+          $window.history.back();
+        }
+
+        $rootScope.$on('$stateChangeStart', function(event, toState, toParams) {
+          $rootScope.showBackButton = (toState.name == 'displayAll') ? false : true;
+        })
       });
     </script>
   </body>
